@@ -55,7 +55,16 @@ class CameraSession(private val context: Context) {
         bind()
     }
     private fun bind() {
-        try { controller.bindToLifecycle(checkNotNull(owner)); ready = true; error = null }
+        try {
+            ready = false
+            controller.bindToLifecycle(checkNotNull(owner))
+            controller.initializationFuture.addListener({
+                if (active) {
+                    try { controller.initializationFuture.get(); ready = true; error = null }
+                    catch (_: Exception) { ready = false; error = "Camera initialization failed. Reopen PHIRA and try again." }
+                }
+            }, executor)
+        }
         catch (_: Exception) { ready = false; error = "Camera unavailable. Close other camera apps and retry." }
     }
     fun retry() { if (active) bind() }
@@ -91,7 +100,7 @@ class CameraSession(private val context: Context) {
             controller.cameraSelector = next; front = !front; subjects = emptyList(); lastAnalysisAt = 0; zoom = 1f
         } catch (_: Exception) { error = "Could not switch cameras." }
     }
-    fun setZoom(value: Float) {
+    fun changeZoom(value: Float) {
         val state = controller.zoomState.value ?: return
         val next = value.coerceIn(state.minZoomRatio, state.maxZoomRatio)
         controller.setZoomRatio(next).addListener({ zoom = controller.zoomState.value?.zoomRatio ?: zoom }, executor)

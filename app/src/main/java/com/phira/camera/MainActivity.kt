@@ -157,9 +157,9 @@ private fun CameraScreen(grid: Grid, onGrid: (Grid) -> Unit, auto: Boolean, onAu
                     ViewfinderPill(if (auto) "AUTO" else "MANUAL")
                 }
                 Row(Modifier.align(Alignment.BottomCenter).padding(14.dp).clip(CircleShape).background(Color.Black.copy(alpha = .5f)), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { session.setZoom(session.zoom - .5f) }) { Text("−", color = Color.White) }
+                    TextButton(onClick = { session.changeZoom(session.zoom - .5f) }) { Text("−", color = Color.White) }
                     Text("${"%.1f".format(session.zoom)}×", color = Color.White, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
-                    TextButton(onClick = { session.setZoom(session.zoom + .5f) }) { Text("+", color = Color.White) }
+                    TextButton(onClick = { session.changeZoom(session.zoom + .5f) }) { Text("+", color = Color.White) }
                 }
             }
         }
