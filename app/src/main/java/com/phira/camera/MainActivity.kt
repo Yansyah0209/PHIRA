@@ -131,8 +131,9 @@ private fun CameraScreen(grid: Grid, onGrid: (Grid) -> Unit, auto: Boolean, onAu
     val fresh = tick - session.lastAnalysisAt < 800 && session.lastAnalysisAt > 0
     val subjects = if (fresh) session.subjects else emptyList()
     val guidance = engine.evaluate(subjects, grid, mode, roll)
+    val warning = session.error ?: session.analysisError
     LaunchedEffect(tick, auto, guidance.ready, session.capturing, settings) {
-        val eligible = auto && !settings && guidance.ready && session.ready && session.error == null && owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        val eligible = auto && !settings && guidance.ready && session.ready && warning == null && owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
         val triggered = gate.update(eligible, tick)
         if (triggered && !session.capturing && tick - session.capturedAt > 4000) session.capture()
     }
@@ -166,10 +167,10 @@ private fun CameraScreen(grid: Grid, onGrid: (Grid) -> Unit, auto: Boolean, onAu
         Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(if (guidance.ready) Icons.Outlined.CheckCircle else Icons.Outlined.MyLocation, null, Modifier.size(18.dp), tint = if (guidance.ready) Accent else Muted)
-                Text(session.error ?: guidance.title, Modifier.padding(start = 8.dp).weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2)
+                Text(warning ?: guidance.title, Modifier.padding(start = 8.dp).weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2)
                 guidance.score?.let { Text("$it", color = if (guidance.ready) Accent else Ink, fontFamily = FontFamily.Monospace, fontSize = 20.sp) }
             }
-            Text(if (session.error != null) "Tap Retry if the camera is unavailable." else guidance.detail, fontSize = 11.sp, color = Muted)
+            Text(if (warning != null) "Manual capture is available when the camera is ready." else guidance.detail, fontSize = 11.sp, color = Muted)
             if (session.error != null) TextButton(onClick = session::retry, contentPadding = PaddingValues(0.dp)) { Text("Retry") }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("FRAMING ALIGNMENT", fontSize = 8.sp, letterSpacing = 1.3.sp, color = Muted)

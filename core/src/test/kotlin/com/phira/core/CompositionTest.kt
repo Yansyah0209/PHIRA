@@ -24,6 +24,11 @@ class CompositionTest {
         assertTrue(engine.evaluate(listOf(face(.3f, .382f), face(.7f, .382f)), Grid.PHI, Mode.GROUP).ready)
     }
     @Test fun malformedDetectionIsIgnored() { assertNull(engine.evaluate(listOf(face(Float.NaN, .3f)), Grid.PHI, Mode.PORTRAIT).score) }
+    @Test fun freeModeDoesNotInventAlignmentScoreOrForceGroupToCenter() {
+        val result = engine.evaluate(listOf(face(.7f, .7f)), Grid.NONE, Mode.GROUP)
+        assertNull(result.score)
+        assertTrue(result.ready)
+    }
     @Test fun autoCaptureHoldsAndLatches() {
         val gate = CaptureGate(1000)
         assertFalse(gate.update(true, 0))

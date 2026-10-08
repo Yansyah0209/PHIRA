@@ -39,6 +39,7 @@ class CameraSession(private val context: Context) {
     private var generation = 0
     var subjects by mutableStateOf<List<Subject>>(emptyList()); private set
     var error by mutableStateOf<String?>(null); private set
+    var analysisError by mutableStateOf<String?>(null); private set
     var ready by mutableStateOf(false); private set
     var capturing by mutableStateOf(false); private set
     var latest by mutableStateOf<Uri?>(null); private set
@@ -69,20 +70,20 @@ class CameraSession(private val context: Context) {
     }
     fun retry() { if (active) bind() }
     fun analyze(mode: Mode) {
-        subjects = emptyList(); lastAnalysisAt = 0
+        subjects = emptyList(); lastAnalysisAt = 0; analysisError = null
         val token = ++generation
         if (mode == Mode.OBJECT) {
             controller.setImageAnalysisAnalyzer(executor, MlKitAnalyzer(listOf(objects), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED, executor) { result ->
                 if (token != generation || !active) return@MlKitAnalyzer
-                if (result.getThrowable(objects) != null) { subjects = emptyList(); error = "Object detection is unavailable. Try Portrait or connect once to download the model." }
-                else { subjects = result.getValue(objects).orEmpty().map { normalize(it.boundingBox) }; error = null }
+                if (result.getThrowable(objects) != null) { subjects = emptyList(); analysisError = "Object detection is unavailable. Try Portrait or connect once to download the model." }
+                else { subjects = result.getValue(objects).orEmpty().map { normalize(it.boundingBox) }; analysisError = null }
                 lastAnalysisAt = SystemClock.elapsedRealtime()
             })
         } else {
             controller.setImageAnalysisAnalyzer(executor, MlKitAnalyzer(listOf(faces), ImageAnalysis.COORDINATE_SYSTEM_VIEW_REFERENCED, executor) { result ->
                 if (token != generation || !active) return@MlKitAnalyzer
-                if (result.getThrowable(faces) != null) { subjects = emptyList(); error = "Face analysis unavailable. You can still take a photo." }
-                else { subjects = result.getValue(faces).orEmpty().map { normalize(it.boundingBox) }; error = null }
+                if (result.getThrowable(faces) != null) { subjects = emptyList(); analysisError = "Face analysis unavailable. You can still take a photo." }
+                else { subjects = result.getValue(faces).orEmpty().map { normalize(it.boundingBox) }; analysisError = null }
                 lastAnalysisAt = SystemClock.elapsedRealtime()
             })
         }
