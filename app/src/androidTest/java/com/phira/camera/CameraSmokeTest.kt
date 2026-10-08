@@ -20,7 +20,9 @@ class CameraSmokeTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val device = UiDevice.getInstance(instrumentation)
         ActivityScenario.launch(MainActivity::class.java).use {
-            assertTrue(device.wait(Until.hasObject(By.desc("Take photograph")), 15000))
+            assertTrue("Camera must initialize", device.wait(Until.hasObject(By.text("ON DEVICE")), 30000))
+            device.findObject(By.desc("Take photograph")).click()
+            assertTrue("Photo must save", device.wait(Until.hasObject(By.text("Saved to Pictures / PHIRA")), 15000))
             // Gradle uninstalls the app after tests; shell-owned Downloads survive that cleanup.
             device.executeShellCommand("screencap -p /sdcard/Download/PHIRA-camera.png")
             device.findObject(By.desc("Camera settings")).click()

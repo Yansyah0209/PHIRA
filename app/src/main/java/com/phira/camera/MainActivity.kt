@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme(colorScheme = lightColorScheme(primary = Ink, background = Paper, surface = Paper, onSurface = Ink, secondary = Accent)) {
+            MaterialTheme(colorScheme = lightColorScheme(primary = Ink, background = Paper, surface = Paper, onSurface = Ink, secondary = Accent, secondaryContainer = Color(0xFFE8EEE8), onSecondaryContainer = Ink, surfaceVariant = Line, onSurfaceVariant = Muted, outline = Muted, primaryContainer = Line, onPrimaryContainer = Ink)) {
                 Surface(Modifier.fillMaxSize(), color = Paper) { PhiraApp() }
             }
         }
@@ -138,16 +138,11 @@ private fun CameraScreen(grid: Grid, onGrid: (Grid) -> Unit, auto: Boolean, onAu
         if (triggered && !session.capturing && tick - session.capturedAt > 4000) session.capture()
     }
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Image(painterResource(R.drawable.ic_phira), "PHIRA logo", Modifier.size(38.dp))
             Text("PHIRA", Modifier.padding(start = 8.dp).weight(1f), fontSize = 19.sp, letterSpacing = 3.sp, fontWeight = FontWeight.SemiBold)
             IconButton(onClick = { settings = true }) { Icon(Icons.Outlined.Tune, "Camera settings") }
         }
-        Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("COMPOSE", fontSize = 10.sp, letterSpacing = 2.sp, fontWeight = FontWeight.Medium, color = Muted)
-            Text(if (session.ready) "ON DEVICE" else "CONNECTING", fontSize = 9.sp, letterSpacing = 1.2.sp, color = Muted, fontFamily = FontFamily.Monospace)
-        }
-        Spacer(Modifier.height(12.dp))
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) {
             val width = minOf(maxWidth, maxHeight * .75f)
             Box(Modifier.width(width).aspectRatio(.75f).clip(RoundedCornerShape(12.dp)).background(Color(0xFF191A18))) {
@@ -155,30 +150,29 @@ private fun CameraScreen(grid: Grid, onGrid: (Grid) -> Unit, auto: Boolean, onAu
                 CompositionOverlay(grid, subjects, guidance)
                 Row(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     ViewfinderPill("${grid.label.uppercase()} GRID")
-                    ViewfinderPill(if (auto) "AUTO" else "MANUAL")
+                    ViewfinderPill(if (!session.ready) "CONNECTING" else if (auto) "AUTO" else "ON DEVICE")
                 }
-                Row(Modifier.align(Alignment.BottomCenter).padding(14.dp).clip(CircleShape).background(Color.Black.copy(alpha = .5f)), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.align(Alignment.TopCenter).padding(top = 40.dp).clip(CircleShape).background(Color.Black.copy(alpha = .4f)), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = { session.changeZoom(session.zoom - .5f) }) { Text("−", color = Color.White) }
                     Text("${"%.1f".format(session.zoom)}×", color = Color.White, fontSize = 12.sp, fontFamily = FontFamily.Monospace)
                     TextButton(onClick = { session.changeZoom(session.zoom + .5f) }) { Text("+", color = Color.White) }
                 }
+                Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(12.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = .62f)).padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(if (guidance.ready) Icons.Outlined.CheckCircle else Icons.Outlined.MyLocation, null, Modifier.size(16.dp), tint = if (guidance.ready) Color(0xFFBED8C6) else Color.White)
+                        Text(warning ?: guidance.title, Modifier.padding(start = 6.dp).weight(1f), color = Color.White, fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Medium, maxLines = 3)
+                        guidance.score?.let { Text("$it", Modifier.padding(start = 6.dp), color = Color.White, fontFamily = FontFamily.Monospace, fontSize = 18.sp, lineHeight = 22.sp) }
+                    }
+                    Text(if (warning != null) "Manual capture is available when the camera is ready." else guidance.detail, color = Color.White.copy(alpha = .8f), fontSize = 10.sp, lineHeight = 14.sp)
+                    if (session.error != null) TextButton(onClick = session::retry, contentPadding = PaddingValues(0.dp)) { Text("Retry", color = Color.White) }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("FRAMING ALIGNMENT", color = Color.White.copy(alpha = .6f), fontSize = 7.sp, lineHeight = 10.sp, letterSpacing = 1.sp)
+                        Text(roll?.let { "${abs(it).roundToInt()}° ${if (abs(it) <= 3) "LEVEL" else "TILT"}" } ?: "LEVEL —", fontSize = 8.sp, lineHeight = 10.sp, color = Color.White.copy(alpha = .7f), fontFamily = FontFamily.Monospace)
+                    }
+                }
             }
         }
-        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(if (guidance.ready) Icons.Outlined.CheckCircle else Icons.Outlined.MyLocation, null, Modifier.size(18.dp), tint = if (guidance.ready) Accent else Muted)
-                Text(warning ?: guidance.title, Modifier.padding(start = 8.dp).weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 2)
-                guidance.score?.let { Text("$it", color = if (guidance.ready) Accent else Ink, fontFamily = FontFamily.Monospace, fontSize = 20.sp) }
-            }
-            Text(if (warning != null) "Manual capture is available when the camera is ready." else guidance.detail, fontSize = 11.sp, color = Muted)
-            if (session.error != null) TextButton(onClick = session::retry, contentPadding = PaddingValues(0.dp)) { Text("Retry") }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("FRAMING ALIGNMENT", fontSize = 8.sp, letterSpacing = 1.3.sp, color = Muted)
-                Text(roll?.let { "${abs(it).roundToInt()}° ${if (abs(it) <= 3) "LEVEL" else "TILT"}" } ?: "LEVEL —", fontSize = 9.sp, color = Muted, fontFamily = FontFamily.Monospace)
-            }
-        }
-        HorizontalDivider(color = Line)
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
             Mode.entries.forEach { item -> TextButton(onClick = { mode = item }, colors = ButtonDefaults.textButtonColors(contentColor = if (mode == item) Ink else Muted)) { Text(item.label, fontSize = 12.sp, fontWeight = if (mode == item) FontWeight.SemiBold else FontWeight.Normal) } }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -190,7 +184,7 @@ private fun CameraScreen(grid: Grid, onGrid: (Grid) -> Unit, auto: Boolean, onAu
             }
             RoundControl(Icons.Outlined.Cameraswitch, "Switch camera", session.ready && !session.capturing, session::flip)
         }
-        Text(if (tick - session.capturedAt < 3000 && session.capturedAt > 0) "Saved to Pictures / PHIRA" else "A little guidance. Your own eye.", Modifier.align(Alignment.CenterHorizontally).padding(bottom = 10.dp), fontSize = 10.sp, color = Muted)
+        Text(if (tick - session.capturedAt < 3000 && session.capturedAt > 0) "Saved to Pictures / PHIRA" else "A little guidance. Your own eye.", Modifier.align(Alignment.CenterHorizontally).padding(bottom = 4.dp), fontSize = 10.sp, lineHeight = 14.sp, color = Muted)
     }
     if (settings) ModalBottomSheet(onDismissRequest = { settings = false }, containerColor = Paper) {
         Column(Modifier.fillMaxWidth().padding(24.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -223,7 +217,7 @@ private fun RoundControl(icon: ImageVector, label: String, enabled: Boolean = tr
 
 @Composable
 private fun ViewfinderPill(text: String) {
-    Text(text, Modifier.clip(RoundedCornerShape(4.dp)).background(Color.Black.copy(alpha = .45f)).padding(horizontal = 8.dp, vertical = 5.dp), color = Color.White, fontSize = 8.sp, letterSpacing = 1.sp, fontFamily = FontFamily.Monospace)
+    Text(text, Modifier.clip(RoundedCornerShape(4.dp)).background(Color.Black.copy(alpha = .45f)).padding(horizontal = 8.dp, vertical = 5.dp), color = Color.White, fontSize = 8.sp, lineHeight = 12.sp, letterSpacing = 1.sp, fontFamily = FontFamily.Monospace)
 }
 
 @Composable
