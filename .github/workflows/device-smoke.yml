@@ -30,7 +30,9 @@ jobs:
           disable-animations: true
           script: |
             gradle :app:connectedDebugAndroidTest --stacktrace
-            adb pull /sdcard/Android/data/com.phira.camera/files/screenshots screenshots
+            mkdir -p screenshots
+            adb pull /sdcard/Download/PHIRA-camera.png screenshots/camera.png
+            adb pull /sdcard/Download/PHIRA-settings.png screenshots/settings.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -8,7 +8,6 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
-import java.io.File
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -22,12 +21,12 @@ class CameraSmokeTest {
         val device = UiDevice.getInstance(instrumentation)
         ActivityScenario.launch(MainActivity::class.java).use {
             assertTrue(device.wait(Until.hasObject(By.desc("Take photograph")), 15000))
-            val folder = File(instrumentation.targetContext.getExternalFilesDir(null), "screenshots").apply { mkdirs() }
-            device.takeScreenshot(File(folder, "camera.png"))
+            // Gradle uninstalls the app after tests; shell-owned Downloads survive that cleanup.
+            device.executeShellCommand("screencap -p /sdcard/Download/PHIRA-camera.png")
             device.findObject(By.desc("Camera settings")).click()
             assertTrue(device.wait(Until.hasObject(By.text("Make it yours")), 5000))
             assertNotNull(device.findObject(By.text("Auto capture")))
-            device.takeScreenshot(File(folder, "settings.png"))
+            device.executeShellCommand("screencap -p /sdcard/Download/PHIRA-settings.png")
             device.pressBack()
             assertTrue(device.wait(Until.hasObject(By.desc("Take photograph")), 5000))
         }
