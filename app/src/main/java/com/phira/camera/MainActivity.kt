@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.provider.Settings
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -71,6 +72,7 @@ private fun PhiraApp() {
     var granted by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
     var requested by remember { mutableStateOf(false) }
     var review by remember { mutableStateOf<Uri?>(null) }
+    BackHandler(enabled = review != null) { review = null }
     val prefs = remember { context.getSharedPreferences("phira", 0) }
     var grid by remember { mutableStateOf(Grid.entries.firstOrNull { it.name == prefs.getString("grid", "PHI") } ?: Grid.PHI) }
     var auto by remember { mutableStateOf(prefs.getBoolean("auto", false)) }
@@ -133,7 +135,7 @@ private fun CameraScreen(grid: Grid, onGrid: (Grid) -> Unit, auto: Boolean, onAu
     val guidance = engine.evaluate(subjects, grid, mode, roll)
     val warning = session.error ?: session.analysisError
     LaunchedEffect(tick, auto, guidance.ready, session.capturing, settings) {
-        val eligible = auto && !settings && guidance.ready && session.ready && warning == null && owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        val eligible = auto && !settings && !session.capturing && tick - session.capturedAt > 4000 && guidance.ready && session.ready && warning == null && owner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
         val triggered = gate.update(eligible, tick)
         if (triggered && !session.capturing && tick - session.capturedAt > 4000) session.capture()
     }
@@ -203,7 +205,7 @@ private fun CameraScreen(grid: Grid, onGrid: (Grid) -> Unit, auto: Boolean, onAu
             }
             OutlinedButton(onClick = { settings = false; onPick() }) { Text("Choose a photo to review") }
             HorizontalDivider(color = Line)
-            Text("PHIRA 0.1 · Early access", fontSize = 12.sp)
+            Text("PHIRA 0.1.1 · Early access", fontSize = 12.sp)
             Text("Faces are detected on this device, without identifying people. Object mode may need an initial model download. No account or photo uploads.\n\nFraming alignment is a geometric guide. Phi is one way to compose; trust your eye.", fontSize = 12.sp, color = Muted)
             Spacer(Modifier.height(20.dp))
         }

@@ -23,6 +23,13 @@ class CameraSmokeTest {
             assertTrue("Camera must initialize", device.wait(Until.hasObject(By.text("ON DEVICE")), 30000))
             device.findObject(By.desc("Take photograph")).click()
             assertTrue("Photo must save", device.wait(Until.hasObject(By.text("Saved to Pictures / PHIRA")), 15000))
+            device.findObject(By.desc("Review photo")).click()
+            assertTrue(device.wait(Until.hasObject(By.text("Photo review")), 5000))
+            assertNotNull(device.findObject(By.text("Share photo")))
+            assertNotNull(device.findObject(By.text("Group")))
+            assertNotNull(device.findObject(By.text("Object")))
+            device.pressBack()
+            assertTrue(device.wait(Until.hasObject(By.desc("Take photograph")), 5000))
             // Gradle uninstalls the app after tests; shell-owned Downloads survive that cleanup.
             device.executeShellCommand("screencap -p /sdcard/Download/PHIRA-camera.png")
             device.findObject(By.desc("Camera settings")).click()
