@@ -1,4 +1,4 @@
-name: Android
+name: Build APK
 on:
   push:
     branches: [main]
@@ -22,11 +22,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - run: gradle :core:test :app:assembleDebug :app:lintDebug --stacktrace
+      - name: Test, build installable APK, and check lint
+        run: ./gradlew :core:test :app:assembleDebug :app:lintDebug --stacktrace
+      - name: Prepare phone download
+        run: |
+          mkdir -p phone-download
+          cp app/build/outputs/apk/debug/app-debug.apk phone-download/PHIRA-early-access.apk
+          cp docs/install-android.md phone-download/INSTALL.md
+          cd phone-download
+          sha256sum PHIRA-early-access.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: PHIRA-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: phone-download/
+          if-no-files-found: error
+          retention-days: 90
       - uses: actions/upload-artifact@v4
         if: always()
         with:
